@@ -1,0 +1,15 @@
+# Secrets and state files
+credentials.json
+token.json
+auth.json
+state.json
+job_info.html
+dashboard.html
+fetch_job.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
