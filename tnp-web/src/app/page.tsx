@@ -20,8 +20,25 @@ export default function Home() {
           </p>
         </div>
 
-        {/* CTA Button */}
-        <div className="w-full max-w-sm mb-20">
+        {/* CTA Buttons */}
+        <div className="w-full max-w-sm mb-20 flex flex-col gap-4">
+          <div className="text-left mb-2">
+            <p className="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-1">Step 1</p>
+            <p className="text-neutral-700">Download the Google Calendar app</p>
+          </div>
+          <Link
+            href="https://play.google.com/store/apps/details?id=com.google.android.calendar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-4 px-8 bg-white border-2 border-neutral-200 hover:border-neutral-300 text-neutral-900 font-semibold rounded-xl shadow-sm hover:shadow transition-all duration-200"
+          >
+            Get Google Calendar App
+          </Link>
+
+          <div className="text-left mt-6 mb-2">
+            <p className="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-1">Step 2</p>
+            <p className="text-neutral-700">Add the TnP Alerts calendar</p>
+          </div>
           <Link
             href={calendarLink}
             target="_blank"
