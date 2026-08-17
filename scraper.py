@@ -107,11 +107,12 @@ async def fetch_new_notifications(processed_ids):
             return []
 
         for row in notif_table.find("tbody").find_all("tr")[:10]:
-            link = row.find("a", href=lambda href: href and "newsupdates/" in href)
+            link = row.find("a", href=True)
             if not link:
                 continue
                 
-            notif_id = link["href"].split("newsupdates/")[-1]
+            # Use the entire link path as the unique ID so it works for resultlist, job/notice, and newsupdates
+            notif_id = link["href"].replace("/", "_")
             title = link.get_text(strip=True)
             
             # Extract type (e.g. Job, News, Event)
