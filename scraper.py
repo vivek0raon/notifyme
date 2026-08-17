@@ -99,19 +99,9 @@ async def fetch_new_notifications(processed_ids):
         dashboard_content = await page.content()
         soup = BeautifulSoup(dashboard_content, "html.parser")
         
-        # The notification table doesn't have a specific ID, but it's a dataTable inside the Notification Details section
-        tables = soup.find_all("table", class_="dataTable")
-        if not tables:
-            await browser.close()
-            return []
-
-        # Find the notification table by checking for the 'Notification Details' header
-        notif_table = None
-        for table in tables:
-            if "Notification Details" in table.get_text():
-                notif_table = table
-                break
-                
+        # Find the notification table directly by its ID
+        notif_table = soup.find("table", id=lambda x: x and "newseventsx" in x)
+        
         if not notif_table or not notif_table.find("tbody"):
             await browser.close()
             return []
