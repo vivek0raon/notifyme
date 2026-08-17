@@ -45,7 +45,7 @@ async def fetch_new_job_details(processed_ids):
         page = await context.new_page()
         
         print("Navigating to TnP portal dashboard...")
-        await page.goto("https://tp.bitmesra.co.in/", timeout=60000)
+        await page.goto("https://tp.bitmesra.co.in/", timeout=60000, wait_until="domcontentloaded")
         await page.wait_for_load_state("domcontentloaded")
         
         dashboard_content = await page.content()
@@ -74,7 +74,7 @@ async def fetch_new_job_details(processed_ids):
         # Fetch details for each new job
         for job in new_jobs:
             print(f"Fetching details for {job['company']}...")
-            await page.goto(f"https://tp.bitmesra.co.in/job/info/{job['id']}", timeout=60000)
+            await page.goto(f"https://tp.bitmesra.co.in/job/info/{job['id']}", timeout=60000, wait_until="domcontentloaded")
             await page.wait_for_load_state("domcontentloaded")
             job["details_html"] = await page.content()
             
@@ -93,7 +93,7 @@ async def fetch_new_notifications(processed_ids):
         page = await context.new_page()
         
         print("Navigating to TnP portal dashboard for notifications...")
-        await page.goto("https://tp.bitmesra.co.in/", timeout=60000)
+        await page.goto("https://tp.bitmesra.co.in/", timeout=60000, wait_until="domcontentloaded")
         await page.wait_for_load_state("domcontentloaded")
         
         dashboard_content = await page.content()
