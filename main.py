@@ -5,20 +5,24 @@ import datetime
 import re
 import time
 from bs4 import BeautifulSoup
-from scraper import fetch_new_job_details
-from calendar_api import add_job_event, add_instant_alert_event
+from scraper import fetch_new_job_details, fetch_new_notifications
+from calendar_api import add_job_event, add_instant_alert_event, add_notification_event
 
 DATA_DIR = os.getenv("DATA_DIR", ".")
 STATE_FILE = os.path.join(DATA_DIR, "state.json")
 # To use a shared calendar, replace 'primary' with the specific calendar ID
 # e.g., 'your_email@group.calendar.google.com'
 CALENDAR_ID = "fbcbe35fb7c1348253a9cc7b88653775bb3743b9720273921af87d230e050dc7@group.calendar.google.com"
+NOTIFICATIONS_CALENDAR_ID = "49ba7feb079a98264dccaeb7fe39159df9a3c7d23fcdaaf8e8e018d06e66d801@group.calendar.google.com"
 
 def load_state():
+    state = {"processed_jobs": [], "processed_notifications": []}
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, "r") as f:
-            return json.load(f)
-    return {"processed_jobs": []}
+            data = json.load(f)
+            # Merge with default structure to prevent key errors
+            state.update(data)
+    return state
 
 def save_state(state):
     with open(STATE_FILE, "w") as f:
@@ -70,8 +74,7 @@ def parse_job_details(html_content):
     
     return details
 
-async def process_new_jobs():
-    state = load_state()
+async def process_new_jobs(state):
     processed_ids = state["processed_jobs"]
     
     print(f"\n[{datetime.datetime.now()}] Checking for new jobs...")
@@ -123,10 +126,46 @@ async def process_new_jobs():
         state["processed_jobs"] = processed_ids
         save_state(state)
 
+async def process_new_notifications(state):
+    processed_ids = state["processed_notifications"]
+    
+    print(f"\n[{datetime.datetime.now()}] Checking for new notifications...")
+    try:
+        new_notifs = await fetch_new_notifications(processed_ids)
+    except Exception as e:
+        print(f"Error fetching notifications: {e}")
+        return
+
+    if not new_notifs:
+        print("No new notifications to process.")
+        return
+
+    new_notifs_added = 0
+    for notif in new_notifs:
+        notif_id = notif["id"]
+        title = notif["title"]
+        notif_type = notif["type"]
+        date_str = notif["date"]
+        
+        # Create the event in the notifications calendar
+        success = add_notification_event(title, notif_type, date_str, calendar_id=NOTIFICATIONS_CALENDAR_ID)
+        
+        if success:
+            processed_ids.append(notif_id)
+            new_notifs_added += 1
+        else:
+            print(f"Failed to add notification event for {title}")
+
+    if new_notifs_added > 0:
+        state["processed_notifications"] = processed_ids
+        save_state(state)
+
 async def main():
     print("Starting TnP Alerts Monitor...")
     while True:
-        await process_new_jobs()
+        state = load_state()
+        await process_new_jobs(state)
+        await process_new_notifications(state)
         print("Sleeping for 15 minutes...")
         await asyncio.sleep(900)
 

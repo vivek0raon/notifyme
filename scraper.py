@@ -81,6 +81,69 @@ async def fetch_new_job_details(processed_ids):
         await browser.close()
         return new_jobs
 
+async def fetch_new_notifications(processed_ids):
+    """Fetch the dashboard and find new notifications."""
+    if not os.path.exists(AUTH_FILE):
+        return []
+
+    new_notifications = []
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(storage_state=AUTH_FILE)
+        page = await context.new_page()
+        
+        print("Navigating to TnP portal dashboard for notifications...")
+        await page.goto("https://tp.bitmesra.co.in/")
+        await page.wait_for_load_state("networkidle")
+        
+        dashboard_content = await page.content()
+        soup = BeautifulSoup(dashboard_content, "html.parser")
+        
+        # The notification table doesn't have a specific ID, but it's a dataTable inside the Notification Details section
+        tables = soup.find_all("table", class_="dataTable")
+        if not tables:
+            await browser.close()
+            return []
+
+        # Find the notification table by checking for the 'Notification Details' header
+        notif_table = None
+        for table in tables:
+            if "Notification Details" in table.get_text():
+                notif_table = table
+                break
+                
+        if not notif_table or not notif_table.find("tbody"):
+            await browser.close()
+            return []
+
+        for row in notif_table.find("tbody").find_all("tr"):
+            link = row.find("a", href=lambda href: href and "newsupdates/" in href)
+            if not link:
+                continue
+                
+            notif_id = link["href"].split("newsupdates/")[-1]
+            title = link.get_text(strip=True)
+            
+            # Extract type (e.g. Job, News, Event)
+            type_tag = row.find("b", class_="text-secondary")
+            notif_type = type_tag.get_text(strip=True) if type_tag else "Update"
+            
+            # Extract date
+            date_td = row.find_all("td")[-1]
+            date_str = date_td.get_text(strip=True) if date_td else ""
+            
+            if notif_id not in processed_ids:
+                print(f"Discovered new notification: {title}")
+                new_notifications.append({
+                    "id": notif_id,
+                    "title": title,
+                    "type": notif_type,
+                    "date": date_str
+                })
+
+        await browser.close()
+        return new_notifications
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "login":

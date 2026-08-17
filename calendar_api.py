@@ -124,6 +124,45 @@ def add_instant_alert_event(company_name, role, description, calendar_id='primar
         print(f"An error occurred creating the instant alert: {error}")
         return False
 
+def add_notification_event(title, type_str, date_str, calendar_id='primary'):
+    """
+    Creates an event scheduled for right now to trigger an immediate phone notification for TnP notifications.
+    """
+    service = get_calendar_service()
+    if not service:
+        return False
+
+    now = datetime.datetime.now()
+    start_time = now + datetime.timedelta(minutes=1)
+    end_time = start_time + datetime.timedelta(minutes=15)
+    
+    event = {
+      'summary': f'[{type_str}] {title}',
+      'description': f'New update from TnP Portal (Posted on {date_str})',
+      'start': {
+        'dateTime': start_time.isoformat(),
+        'timeZone': 'Asia/Kolkata',
+      },
+      'end': {
+        'dateTime': end_time.isoformat(),
+        'timeZone': 'Asia/Kolkata',
+      },
+      'reminders': {
+        'useDefault': False,
+        'overrides': [
+          {'method': 'popup', 'minutes': 1},
+        ],
+      },
+    }
+
+    try:
+        event_result = service.events().insert(calendarId=calendar_id, body=event).execute()
+        print(f"Notification alert created: {event_result.get('htmlLink')}")
+        return True
+    except HttpError as error:
+        print(f"An error occurred creating the notification alert: {error}")
+        return False
+
 if __name__ == "__main__":
     # Test
     # This will trigger the auth flow if token.json doesn't exist

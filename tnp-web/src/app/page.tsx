@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 export default function Home() {
-  const calendarLink = "https://calendar.google.com/calendar/u/0?cid=fbcbe35fb7c1348253a9cc7b88653775bb3743b9720273921af87d230e050dc7@group.calendar.google.com";
+  const jobsCalendarLink = "https://calendar.google.com/calendar/u/0?cid=fbcbe35fb7c1348253a9cc7b88653775bb3743b9720273921af87d230e050dc7@group.calendar.google.com";
+  const notifsCalendarLink = "https://calendar.google.com/calendar/u/0?cid=49ba7feb079a98264dccaeb7fe39159df9a3c7d23fcdaaf8e8e018d06e66d801@group.calendar.google.com";
 
   return (
     <main className="min-h-screen bg-[#fafafa] text-neutral-900 font-sans selection:bg-blue-100 selection:text-blue-900">
@@ -37,16 +38,27 @@ export default function Home() {
 
           <div className="text-left mt-6 mb-2">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-1">Step 2</p>
-            <p className="text-neutral-700">Add the TnP Alerts calendar</p>
+            <p className="text-neutral-700">Add the Calendars you want</p>
           </div>
+          
           <Link
-            href={calendarLink}
+            href={jobsCalendarLink}
             target="_blank"
             rel="noopener noreferrer"
             className="block w-full py-4 px-8 bg-neutral-950 hover:bg-neutral-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
           >
-            Subscribe to Calendar
+            🗓️ Subscribe to Jobs & Deadlines
           </Link>
+          
+          <Link
+            href={notifsCalendarLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-4 px-8 bg-white border border-neutral-200 hover:border-neutral-300 text-neutral-900 font-semibold rounded-xl shadow-sm hover:shadow transition-all duration-200 mt-2"
+          >
+            🔔 Subscribe to Portal Notifications
+          </Link>
+          
           <p className="text-sm text-neutral-400 mt-4">
             Free forever. No login required.
           </p>
@@ -73,7 +85,7 @@ export default function Home() {
               </div>
               <div>
                 <h3 className="font-semibold text-neutral-900">Subscribe</h3>
-                <p className="text-neutral-500 mt-1">Click the black button above. It will open your calendar and ask you to add "BIT Mesra Placements".</p>
+                <p className="text-neutral-500 mt-1">Click the buttons above. They will open your calendar and ask you to add the shared calendars.</p>
               </div>
             </div>
 
