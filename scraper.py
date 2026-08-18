@@ -93,14 +93,14 @@ async def fetch_new_notifications(processed_ids):
         page = await context.new_page()
         
         print("Navigating to TnP portal dashboard for notifications...")
-        await page.goto("https://tp.bitmesra.co.in/", timeout=60000, wait_until="domcontentloaded")
+        await page.goto("https://tp.bitmesra.co.in/newsevents", timeout=60000, wait_until="domcontentloaded")
         await page.wait_for_load_state("domcontentloaded")
         
         dashboard_content = await page.content()
         soup = BeautifulSoup(dashboard_content, "html.parser")
         
         # Find the notification table directly by its ID
-        notif_table = soup.find("table", id=lambda x: x and "newseventsx" in x)
+        notif_table = soup.find("table", id="newsevents")
         
         if not notif_table or not notif_table.find("tbody"):
             await browser.close()
