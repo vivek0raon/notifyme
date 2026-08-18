@@ -92,7 +92,9 @@ def add_instant_alert_event(company_name, role, description, calendar_id='primar
         return False
 
     # Schedule the event to start 1 minute from now so it triggers an immediate reminder
-    now = datetime.datetime.now()
+    # Explicitly use IST timezone to prevent Docker UTC offset bugs
+    ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now = datetime.datetime.now(ist_tz)
     start_time = now + datetime.timedelta(minutes=1)
     end_time = start_time + datetime.timedelta(minutes=15)
     
@@ -132,7 +134,9 @@ def add_notification_event(title, type_str, date_str, calendar_id='primary'):
     if not service:
         return False
 
-    now = datetime.datetime.now()
+    # Explicitly use IST timezone to prevent Docker UTC offset bugs
+    ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now = datetime.datetime.now(ist_tz)
     start_time = now + datetime.timedelta(minutes=1)
     end_time = start_time + datetime.timedelta(minutes=15)
     
