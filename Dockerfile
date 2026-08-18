@@ -11,6 +11,7 @@ COPY . .
 
 # Set data directory to a persistent volume path
 ENV DATA_DIR="/app/data"
+ENV TZ="Asia/Kolkata"
 
 # Create the data directory so it exists even if volume isn't mounted yet
 RUN mkdir -p /app/data
