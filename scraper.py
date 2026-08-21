@@ -41,45 +41,46 @@ async def fetch_new_job_details(processed_ids):
     new_jobs = []
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(storage_state=AUTH_FILE)
-        page = await context.new_page()
-        
-        print("Navigating to TnP portal dashboard...")
-        await page.goto("https://tp.bitmesra.co.in/", timeout=60000, wait_until="domcontentloaded")
-        await page.wait_for_load_state("domcontentloaded")
-        
-        dashboard_content = await page.content()
-        soup = BeautifulSoup(dashboard_content, "html.parser")
-        table = soup.find("table", id="job-listings")
-        
-        if not table or not table.find("tbody"):
-            print("Could not find job listings table.")
-            await browser.close()
-            return []
-
-        # Find all new job IDs
-        for row in table.find("tbody").find_all("tr"):
-            columns = row.find_all("td")
-            if len(columns) < 4: continue
+        try:
+            context = await browser.new_context(storage_state=AUTH_FILE)
+            page = await context.new_page()
             
-            company_name = columns[0].get_text(strip=True)
-            info_link = columns[3].find("a", href=lambda href: href and "job/info/" in href)
-            if not info_link: continue
-            
-            job_id = info_link["href"].split("job/info/")[-1]
-            if job_id not in processed_ids:
-                print(f"Discovered new job: {company_name}")
-                new_jobs.append({"id": job_id, "company": company_name})
-
-        # Fetch details for each new job
-        for job in new_jobs:
-            print(f"Fetching details for {job['company']}...")
-            await page.goto(f"https://tp.bitmesra.co.in/job/info/{job['id']}", timeout=60000, wait_until="domcontentloaded")
+            print("Navigating to TnP portal dashboard...")
+            await page.goto("https://tp.bitmesra.co.in/", timeout=60000, wait_until="domcontentloaded")
             await page.wait_for_load_state("domcontentloaded")
-            job["details_html"] = await page.content()
             
-        await browser.close()
-        return new_jobs
+            dashboard_content = await page.content()
+            soup = BeautifulSoup(dashboard_content, "html.parser")
+            table = soup.find("table", id="job-listings")
+            
+            if not table or not table.find("tbody"):
+                print("Could not find job listings table.")
+                return []
+
+            # Find all new job IDs
+            for row in table.find("tbody").find_all("tr"):
+                columns = row.find_all("td")
+                if len(columns) < 4: continue
+                
+                company_name = columns[0].get_text(strip=True)
+                info_link = columns[3].find("a", href=lambda href: href and "job/info/" in href)
+                if not info_link: continue
+                
+                job_id = info_link["href"].split("job/info/")[-1]
+                if job_id not in processed_ids:
+                    print(f"Discovered new job: {company_name}")
+                    new_jobs.append({"id": job_id, "company": company_name})
+
+            # Fetch details for each new job
+            for job in new_jobs:
+                print(f"Fetching details for {job['company']}...")
+                await page.goto(f"https://tp.bitmesra.co.in/job/info/{job['id']}", timeout=60000, wait_until="domcontentloaded")
+                await page.wait_for_load_state("domcontentloaded")
+                job["details_html"] = await page.content()
+                
+            return new_jobs
+        finally:
+            await browser.close()
 
 async def fetch_new_notifications(processed_ids):
     """Fetch the dashboard and find new notifications."""
@@ -89,51 +90,52 @@ async def fetch_new_notifications(processed_ids):
     new_notifications = []
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(storage_state=AUTH_FILE)
-        page = await context.new_page()
-        
-        print("Navigating to TnP portal dashboard for notifications...")
-        await page.goto("https://tp.bitmesra.co.in/newsevents", timeout=60000, wait_until="domcontentloaded")
-        await page.wait_for_load_state("domcontentloaded")
-        
-        dashboard_content = await page.content()
-        soup = BeautifulSoup(dashboard_content, "html.parser")
-        
-        # Find the notification table directly by its ID
-        notif_table = soup.find("table", id="newsevents")
-        
-        if not notif_table or not notif_table.find("tbody"):
-            await browser.close()
-            return []
+        try:
+            context = await browser.new_context(storage_state=AUTH_FILE)
+            page = await context.new_page()
+            
+            print("Navigating to TnP portal dashboard for notifications...")
+            await page.goto("https://tp.bitmesra.co.in/newsevents", timeout=60000, wait_until="domcontentloaded")
+            await page.wait_for_load_state("domcontentloaded")
+            
+            dashboard_content = await page.content()
+            soup = BeautifulSoup(dashboard_content, "html.parser")
+            
+            # Find the notification table directly by its ID
+            notif_table = soup.find("table", id="newsevents")
+            
+            if not notif_table or not notif_table.find("tbody"):
+                return []
 
-        for row in notif_table.find("tbody").find_all("tr")[:10]:
-            link = row.find("a", href=True)
-            if not link:
-                continue
+            for row in notif_table.find("tbody").find_all("tr")[:10]:
+                link = row.find("a", href=True)
+                if not link:
+                    continue
+                    
+                # Use the entire link path as the unique ID so it works for resultlist, job/notice, and newsupdates
+                notif_id = link["href"].replace("/", "_")
+                title = link.get_text(strip=True)
                 
-            # Use the entire link path as the unique ID so it works for resultlist, job/notice, and newsupdates
-            notif_id = link["href"].replace("/", "_")
-            title = link.get_text(strip=True)
-            
-            # Extract type (e.g. Job, News, Event)
-            type_tag = row.find("b", class_="text-secondary")
-            notif_type = type_tag.get_text(strip=True) if type_tag else "Update"
-            
-            # Extract date
-            date_td = row.find_all("td")[-1]
-            date_str = date_td.get_text(strip=True) if date_td else ""
-            
-            if notif_id not in processed_ids:
-                print(f"Discovered new notification: {title}")
-                new_notifications.append({
-                    "id": notif_id,
-                    "title": title,
-                    "type": notif_type,
-                    "date": date_str
-                })
+                # Extract type (e.g. Job, News, Event)
+                type_tag = row.find("b", class_="text-secondary")
+                notif_type = type_tag.get_text(strip=True) if type_tag else "Update"
+                
+                # Extract date
+                date_td = row.find_all("td")[-1]
+                date_str = date_td.get_text(strip=True) if date_td else ""
+                
+                if notif_id not in processed_ids:
+                    print(f"Discovered new notification: {title}")
+                    new_notifications.append({
+                        "id": notif_id,
+                        "title": title,
+                        "type": notif_type,
+                        "date": date_str
+                    })
 
-        await browser.close()
-        return new_notifications
+            return new_notifications
+        finally:
+            await browser.close()
 
 if __name__ == "__main__":
     import sys
